@@ -1,0 +1,46 @@
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# local settings for datasource
+server/*.local.json
+server/*.local.js
+
+tiles
+
+# storage
+storage
+
+# dependencies
+node_modules
+
+# production
+build
+build-site
+# logs
+logs
+
+# other
+_*
+
+# misc
+.DS_Store
+.env
+.idea
+.vscode
+.project
+.strong-pm
+nbproject
+npm-debug.log
+.vscode
+
+# files
+*.dat
+*.iml
+*.log
+*.out
+*.pid
+*.seed
+*.sublime-*
+*.swo
+*.swp
+*.tgz
+local_pm2.development.config.js
