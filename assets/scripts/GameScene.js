@@ -16,7 +16,23 @@ class GameScene extends Phaser.Scene {
 	create() {
 		this.createBackground();
 		this.createCards();
+		this.start();
+	}
+
+	start() {
 		this.openedCard = null;
+		this.openedCardsCount = 0;
+		this.initCards();
+	}
+
+	initCards() {
+		const positions = this.getCardsPositions();
+
+		this.cards.forEach(card => {
+			const position = positions.pop();
+			card.close();
+			card.setPosition(position.x, position.y);
+		});
 	}
 
 	createBackground() {
@@ -25,12 +41,10 @@ class GameScene extends Phaser.Scene {
 
 	createCards() {
 		this.cards = [];
-		const positions = this.getCardsPositions();
-		Phaser.Utils.Array.Shuffle(positions);
 
 		config.cards.forEach(value => {
 			for (let i = 0; i < 2; i++) {
-				this.cards.push(new Card(this, value, positions.pop()));
+				this.cards.push(new Card(this, value));
 			}
 		});
 
@@ -46,6 +60,7 @@ class GameScene extends Phaser.Scene {
 			if (this.openedCard.value === card.value) {
 				// картинки равны - запомнить
 				this.openedCard = null;
+				this.openedCardsCount++;
 			} else {
 				// картинки разные - скрыть прошлую
 				this.openedCard.close();
@@ -56,6 +71,10 @@ class GameScene extends Phaser.Scene {
 			this.openedCard = card;
 		}
 		card.open();
+
+		if (this.openedCardsCount === this.cards.length / 2) {
+			this.start();
+		}
 	}
 
 	getCardsPositions() {
@@ -63,8 +82,8 @@ class GameScene extends Phaser.Scene {
 		const cardTexture = this.textures.get('card').getSourceImage();
 		const cardWidth = cardTexture.width + 4;
 		const cardHeight = cardTexture.height + 4;
-		const offsetX = (this.sys.game.config.width - cardWidth * config.cols) / 2;
-		const offsetY = (this.sys.game.config.height - cardHeight * config.rows) / 2;
+		const offsetX = (this.sys.game.config.width - cardWidth * config.cols) / 2 + cardWidth / 2;
+		const offsetY = (this.sys.game.config.height - cardHeight * config.rows) / 2 + cardHeight / 2;
 
 		for (let row = 0; row < config.rows; row++) {
 			for (let col = 0; col < config.cols; col++) {
@@ -74,6 +93,6 @@ class GameScene extends Phaser.Scene {
 				});
 			}
 		}
-		return positions;
+		return Phaser.Utils.Array.Shuffle(positions);
 	}
 }
