@@ -1,5 +1,5 @@
 const config = {
-	type: Phaser.AUTO, // webgl or canvas (if webgl doesn't work)
+	type: Phaser.AUTO, // webgl or canvas
 	width: 1920,
 	height: 1080,
 	rows: 2,
