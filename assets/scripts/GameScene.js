@@ -13,13 +13,43 @@ class GameScene extends Phaser.Scene {
 		this.load.image('card5', 'assets/sprites/card5.png');
 	}
 
+	createText() {
+		this.timeoutText = this.add.text(20, 480, 'Time: ' + this.timeout, {
+			font: '50px Novella',
+			fill: '#fff',
+		});
+	}
+
+	onTimerTick() {
+		this.timeoutText.setText('Time: ' + this.timeout);
+
+		if (this.timeout <= 0) {
+			this.start();
+		} else {
+			this.timeout--;
+		}
+	}
+
+	createTimer() {
+		this.time.addEvent({
+			delay: 1000,
+			callback: this.onTimerTick,
+			callbackScope: this,
+			loop: true,
+		});
+	}
+
 	create() {
+		this.timeout = config.timeout;
+		this.createTimer();
 		this.createBackground();
+		this.createText();
 		this.createCards();
 		this.start();
 	}
 
 	start() {
+		this.timeout = config.timeout;
 		this.openedCard = null;
 		this.openedCardsCount = 0;
 		this.initCards();
