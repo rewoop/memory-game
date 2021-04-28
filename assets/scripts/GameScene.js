@@ -14,6 +14,7 @@ class GameScene extends Phaser.Scene {
 		this.load.image('card5', 'assets/sprites/card5.png');
 
 		this.load.image('play', 'assets/sprites/play-button.svg');
+		this.load.image('restart', 'assets/sprites/update-arrow.svg');
 
 		this.load.audio('card', 'assets/sounds/card.mp3');
 		this.load.audio('complete', 'assets/sounds/complete.mp3');
@@ -70,13 +71,67 @@ class GameScene extends Phaser.Scene {
 			fill: '#fff',
 		});
 	}
+
+	onTimerEnd() {
+		this.cards.forEach(card => card.destroy());
+		this.timeoutText.setText('');
+		this.levelText.setText('');
+
+		this.timerHeaderText = this.add.text(
+			this.sys.game.config.width / 2 - 420,
+			this.sys.game.config.height / 2 - 450,
+			'No way. You lose...',
+			{
+				font: '120px Novella',
+				fill: '#fff',
+			}
+		);
+		this.timerMainText = this.add.text(
+			this.sys.game.config.width / 2 - 700,
+			this.sys.game.config.height / 2 - 250,
+			'if you want to restart - click the button below',
+			{
+				font: '80px Novella',
+				fill: '#fff',
+			}
+		);
+
+		this.restartBtn = this.add
+			.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'restart')
+			.setInteractive({ cursor: 'pointer' });
+
+		const onRestartClick = () => {
+			this.tweens.add({
+				targets: [this.restartBtn, this.timerHeaderText, this.timerMainText],
+				scaleY: 0,
+				ease: 'Linear',
+				duration: 300,
+				onComplete: () => {
+					this.restartBtn.destroy();
+					this.isPlaying = true;
+					config.cards = [];
+					config.level = 1;
+					this.create();
+				},
+			});
+		};
+
+		this.restartBtn.on('pointerdown', onRestartClick);
+		this.restartBtn.on('pointerover', () => {
+			this.restartBtn.setTint(0xf55f5f);
+		});
+		this.restartBtn.on('pointerout', () => {
+			this.restartBtn.clearTint();
+		});
+	}
+
 	onTimerTick() {
 		this.timeoutText.setText('Time: ' + this.timeout);
 
 		if (this.timeout <= 0) {
 			this.timer.paused = true;
 			this.sounds.timeout.play();
-			this.restart();
+			this.onTimerEnd();
 		} else {
 			--this.timeout;
 		}
@@ -99,6 +154,114 @@ class GameScene extends Phaser.Scene {
 		};
 		this.sounds.theme.play({ volume: 0.1 });
 	}
+
+	createStartingText() {
+		const headerText = this.add.text(
+			this.sys.game.config.width / 2 - 210,
+			this.sys.game.config.height / 2 - 450,
+			'Hey, bro!',
+			{
+				font: '120px Novella',
+				fill: '#fff',
+			}
+		);
+		const mainText = this.add.text(
+			this.sys.game.config.width / 2 - 580,
+			this.sys.game.config.height / 2 - 250,
+			'click play button below if u wanna play',
+			{
+				font: '80px Novella',
+				fill: '#fff',
+			}
+		);
+
+		this.playBtn = this.add
+			.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'play')
+			.setInteractive({ cursor: 'pointer' });
+
+		const onClickBtn = () => {
+			this.tweens.add({
+				targets: [this.playBtn, headerText, mainText],
+				scaleY: 0,
+				ease: 'Linear',
+				duration: 300,
+				onComplete: () => {
+					this.playBtn.destroy();
+					this.isPlaying = true;
+					this.create();
+				},
+			});
+		};
+
+		this.playBtn.on('pointerdown', onClickBtn);
+		this.playBtn.on('pointerover', () => {
+			this.playBtn.setTint(0xf55f5f);
+		});
+		this.playBtn.on('pointerout', () => {
+			this.playBtn.clearTint();
+		});
+	}
+
+	createEndingText() {
+		this.cards.forEach(card => card.destroy());
+		this.timeoutText.setText('');
+		this.levelText.setText('');
+		this.timer.paused = true;
+		if (this.timerHeaderText || this.timerMainText) {
+			this.timerHeaderText.setText('');
+			this.timerMainText.setText('');
+		}
+
+		const headerText = this.add.text(
+			this.sys.game.config.width / 2 - 210,
+			this.sys.game.config.height / 2 - 450,
+			'YOU WIN!',
+			{
+				font: '120px Novella',
+				fill: '#f55f5f',
+			}
+		);
+		const mainText = this.add.text(
+			this.sys.game.config.width / 2 - 420,
+			this.sys.game.config.height / 2 - 250,
+			'You are f*cking incredible!',
+			{
+				font: '80px Novella',
+				fill: '#fff',
+			}
+		);
+
+		this.endButton = this.add
+			.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'restart')
+			.setInteractive({ cursor: 'pointer' });
+
+		const onEndBtnClick = () => {
+			this.tweens.add({
+				targets: [this.endButton, headerText, mainText],
+				scaleY: 0,
+				ease: 'Linear',
+				duration: 300,
+				onComplete: () => {
+					this.endButton.destroy();
+					this.isPlaying = true;
+					config.cards = [];
+					config.level = 1;
+					this.create();
+				},
+			});
+		};
+
+		this.endButton.on('pointerdown', onEndBtnClick);
+		this.endButton.on('pointerover', () => {
+			this.endButton.setTint(0xf55f5f);
+		});
+		this.endButton.on('pointerout', () => {
+			this.endButton.clearTint();
+		});
+
+		// config.level = 1
+	}
+
 	create() {
 		this.createBackground();
 		if (this.isPlaying) {
@@ -110,56 +273,24 @@ class GameScene extends Phaser.Scene {
 			this.createCards();
 			this.start();
 		} else {
-			const headerText = this.add.text(
-				this.sys.game.config.width / 2 - 210,
-				this.sys.game.config.height / 2 - 450,
-				'Hey, bro!',
-				{
-					font: '120px Novella',
-					fill: '#fff',
-				}
-			);
-			const mainText = this.add.text(
-				this.sys.game.config.width / 2 - 580,
-				this.sys.game.config.height / 2 - 250,
-				'click play button below if u wanna play',
-				{
-					font: '80px Novella',
-					fill: '#fff',
-				}
-			);
-			this.playBtn = this.add
-				.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'play')
-				.setInteractive({ cursor: 'pointer' });
-
-			const onClickBtn = () => {
-				this.tweens.add({
-					targets: [this.playBtn, headerText, mainText],
-					scaleY: 0,
-					ease: 'Linear',
-					duration: 300,
-					onComplete: () => {
-						this.playBtn.destroy();
-						this.isPlaying = true;
-						this.create();
-					},
-				});
-			};
-
-			this.playBtn.on('pointerdown', onClickBtn);
+			this.createStartingText();
 		}
 	}
+
 	restart() {
 		let count = 0;
 		const onCardMoveComplete = () => {
 			++count;
 			if (count >= this.cards.length) {
-				config.level < 7 ? config.level++ : (config.level = 1);
-				this.start();
+				if (config.level < 7) {
+					config.level++;
+					this.start();
+				} else {
+					this.createEndingText();
+				}
 			}
 		};
 		this.cards.forEach(card => {
-			// card.depth = 1/card.position.delay/100;
 			card.move({
 				x: this.sys.game.config.width + card.width,
 				y: this.sys.game.config.height + card.height,
@@ -209,7 +340,6 @@ class GameScene extends Phaser.Scene {
 				currentCard.on('pointerdown', () => this.onCardClicked(currentCard));
 			}
 		}
-		// this.input.on('gameobjectdown', this.onCardClicked, this);
 	}
 	onCardClicked(card) {
 		if (card.opened) {
