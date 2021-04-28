@@ -1,6 +1,8 @@
 class GameScene extends Phaser.Scene {
 	constructor() {
 		super('Game');
+
+		this.isPlaying = false;
 	}
 	preload() {
 		this.load.image('bg', 'assets/sprites/background.jpeg');
@@ -11,14 +13,59 @@ class GameScene extends Phaser.Scene {
 		this.load.image('card4', 'assets/sprites/card4.png');
 		this.load.image('card5', 'assets/sprites/card5.png');
 
+		this.load.image('play', 'assets/sprites/play-button.svg');
+
 		this.load.audio('card', 'assets/sounds/card.mp3');
 		this.load.audio('complete', 'assets/sounds/complete.mp3');
 		this.load.audio('success', 'assets/sounds/success.mp3');
 		this.load.audio('theme', 'assets/sounds/theme.mp3');
 		this.load.audio('timeout', 'assets/sounds/timeout.mp3');
 	}
+	checkLevelOptions() {
+		switch (config.level) {
+			case 1:
+				config.cards = [1, 2];
+				config.timeout = 15;
+				config.cols = 2;
+				break;
+			case 2:
+				config.cards = [1, 2, 3];
+				config.timeout = 20;
+				config.cols = 3;
+				break;
+			case 3:
+				config.cards = [1, 2, 3, 4];
+				config.timeout = 25;
+				config.cols = 4;
+				break;
+			case 4:
+				config.cards = [1, 2, 3, 4, 5];
+				config.timeout = 30;
+				config.cols = 5;
+				break;
+			case 5:
+				config.cards = [1, 2, 3, 4, 5];
+				config.timeout = 25;
+				break;
+			case 6:
+				config.cards = [1, 2, 3, 4, 5];
+				config.timeout = 20;
+				break;
+			case 7:
+				config.cards = [1, 2, 3, 4, 5];
+				config.timeout = 15;
+				break;
+		}
+
+		this.createCards();
+	}
 	createText() {
 		this.timeoutText = this.add.text(20, 480, '', {
+			font: '50px Novella',
+			fill: '#fff',
+		});
+
+		this.levelText = this.add.text(1700, 480, '', {
 			font: '50px Novella',
 			fill: '#fff',
 		});
@@ -53,19 +100,61 @@ class GameScene extends Phaser.Scene {
 		this.sounds.theme.play({ volume: 0.1 });
 	}
 	create() {
-		this.timeout = config.timeout;
-		this.createSounds();
-		this.createTimer();
 		this.createBackground();
-		this.createText();
-		this.createCards();
-		this.start();
+		if (this.isPlaying) {
+			this.createSounds();
+			this.playBtn.destroy();
+			this.timeout = config.timeout;
+			this.createTimer();
+			this.createText();
+			this.createCards();
+			this.start();
+		} else {
+			const headerText = this.add.text(
+				this.sys.game.config.width / 2 - 210,
+				this.sys.game.config.height / 2 - 450,
+				'Hey, bro!',
+				{
+					font: '120px Novella',
+					fill: '#fff',
+				}
+			);
+			const mainText = this.add.text(
+				this.sys.game.config.width / 2 - 580,
+				this.sys.game.config.height / 2 - 250,
+				'click play button below if u wanna play',
+				{
+					font: '80px Novella',
+					fill: '#fff',
+				}
+			);
+			this.playBtn = this.add
+				.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'play')
+				.setInteractive({ cursor: 'pointer' });
+
+			const onClickBtn = () => {
+				this.tweens.add({
+					targets: [this.playBtn, headerText, mainText],
+					scaleY: 0,
+					ease: 'Linear',
+					duration: 300,
+					onComplete: () => {
+						this.playBtn.destroy();
+						this.isPlaying = true;
+						this.create();
+					},
+				});
+			};
+
+			this.playBtn.on('pointerdown', onClickBtn);
+		}
 	}
 	restart() {
 		let count = 0;
 		const onCardMoveComplete = () => {
 			++count;
 			if (count >= this.cards.length) {
+				config.level < 7 ? config.level++ : (config.level = 1);
 				this.start();
 			}
 		};
@@ -80,11 +169,13 @@ class GameScene extends Phaser.Scene {
 		});
 	}
 	start() {
+		this.checkLevelOptions();
 		this.initCardsPositions();
 		this.timeout = config.timeout;
 		this.openedCard = null;
 		this.openedCardsCount = 0;
 		this.timer.paused = false;
+		this.levelText.setText('Level: ' + config.level);
 		this.initCards();
 		this.showCards();
 	}
@@ -113,13 +204,14 @@ class GameScene extends Phaser.Scene {
 
 		for (let value of config.cards) {
 			for (let i = 0; i < 2; i++) {
-				this.cards.push(new Card(this, value));
+				const currentCard = new Card(this, value);
+				this.cards.push(currentCard);
+				currentCard.on('pointerdown', () => this.onCardClicked(currentCard));
 			}
 		}
-
-		this.input.on('gameobjectdown', this.onCardClicked, this);
+		// this.input.on('gameobjectdown', this.onCardClicked, this);
 	}
-	onCardClicked(pointer, card) {
+	onCardClicked(card) {
 		if (card.opened) {
 			return false;
 		}
