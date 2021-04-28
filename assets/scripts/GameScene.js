@@ -111,6 +111,7 @@ class GameScene extends Phaser.Scene {
 					this.isPlaying = true;
 					config.cards = [];
 					config.level = 1;
+					this.sounds.theme.stop();
 					this.create();
 				},
 			});
@@ -246,6 +247,7 @@ class GameScene extends Phaser.Scene {
 					this.isPlaying = true;
 					config.cards = [];
 					config.level = 1;
+					this.sounds.theme.stop();
 					this.create();
 				},
 			});
