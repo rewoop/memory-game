@@ -284,12 +284,7 @@ class GameScene extends Phaser.Scene {
 		const onCardMoveComplete = () => {
 			++count;
 			if (count >= this.cards.length) {
-				if (config.level < 7) {
-					config.level++;
-					this.start();
-				} else {
-					this.createEndingText();
-				}
+				this.start();
 			}
 		};
 		this.cards.forEach(card => {
@@ -302,15 +297,20 @@ class GameScene extends Phaser.Scene {
 		});
 	}
 	start() {
-		this.checkLevelOptions();
-		this.initCardsPositions();
-		this.timeout = config.timeout;
-		this.openedCard = null;
-		this.openedCardsCount = 0;
-		this.timer.paused = false;
-		this.levelText.setText('Level: ' + config.level);
-		this.initCards();
-		this.showCards();
+		if (config.level < 8) {
+			this.checkLevelOptions();
+			this.initCardsPositions();
+			this.timeout = config.timeout;
+			this.openedCard = null;
+			this.openedCardsCount = 0;
+			this.timer.paused = false;
+			this.levelText.setText('Level: ' + config.level);
+			this.initCards();
+			this.showCards();
+			config.level++;
+		} else {
+			this.createEndingText();
+		}
 	}
 	initCards() {
 		const positions = Phaser.Utils.Array.Shuffle(this.positions);
