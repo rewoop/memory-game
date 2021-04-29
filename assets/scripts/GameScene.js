@@ -1,4 +1,7 @@
-class GameScene extends Phaser.Scene {
+import { config } from './main';
+import { Card } from './Card';
+
+export class GameScene extends Phaser.Scene {
 	constructor() {
 		super('Game');
 
@@ -29,8 +32,8 @@ class GameScene extends Phaser.Scene {
 	checkLevelOptions() {
 		switch (config.level) {
 			case 1:
-				config.cards = [1];
-				config.timeout = 3;
+				config.cards = [1, 2];
+				config.timeout = 15;
 				config.cols = 2;
 				break;
 			case 2:
@@ -343,7 +346,7 @@ class GameScene extends Phaser.Scene {
 	}
 
 	start() {
-		if (config.level < 2) {
+		if (config.level < 8) {
 			this.checkLevelOptions();
 			this.initCardsPositions();
 			this.timeout = config.timeout;

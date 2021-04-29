@@ -1,4 +1,6 @@
-const config = {
+import { GameScene } from './GameScene';
+
+export const config = {
 	type: Phaser.AUTO, // webgl or canvas
 	width: 1920,
 	height: 1080,
@@ -10,4 +12,4 @@ const config = {
 	scene: new GameScene(),
 };
 
-const game = new Phaser.Game(config);
+export const game = new Phaser.Game(config);
