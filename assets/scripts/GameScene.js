@@ -6,6 +6,7 @@ class GameScene extends Phaser.Scene {
 		this.currentPoints = 0;
 		this.similarCardsCount = 0;
 	}
+
 	preload() {
 		this.load.image('bg', 'assets/sprites/background.jpeg');
 		this.load.image('card', 'assets/sprites/card.png');
@@ -24,11 +25,12 @@ class GameScene extends Phaser.Scene {
 		this.load.audio('theme', 'assets/sounds/theme.mp3');
 		this.load.audio('timeout', 'assets/sounds/timeout.mp3');
 	}
+
 	checkLevelOptions() {
 		switch (config.level) {
 			case 1:
-				config.cards = [1, 2];
-				config.timeout = 15;
+				config.cards = [1];
+				config.timeout = 3;
 				config.cols = 2;
 				break;
 			case 2:
@@ -62,6 +64,67 @@ class GameScene extends Phaser.Scene {
 
 		this.createCards();
 	}
+
+	setCurrentPoints() {
+		switch (true) {
+			case this.similarCardsCount === 1:
+				this.currentPoints = this.currentPoints + 100;
+				this.pointsText.setText('Points: ' + this.currentPoints);
+				break;
+			case this.similarCardsCount === 2:
+				this.currentPoints = this.currentPoints + 250;
+				this.pointsText.setText('Points: ' + this.currentPoints);
+				break;
+			case this.similarCardsCount === 3:
+				this.currentPoints = this.currentPoints + 500;
+				this.pointsText.setText('Points: ' + this.currentPoints);
+				break;
+			case this.similarCardsCount === 4:
+				this.currentPoints = this.currentPoints + 1000;
+				this.pointsText.setText('Points: ' + this.currentPoints);
+				break;
+			case this.similarCardsCount >= 5:
+				this.currentPoints = this.currentPoints + 5000;
+				this.pointsText.setText('Points: ' + this.currentPoints);
+				break;
+		}
+	}
+
+	clearWhenEnd() {
+		this.cards.forEach(card => card.destroy());
+		this.timeoutText.setText('');
+		this.levelText.setText('');
+		this.pointsText.setText('');
+		this.timer.paused = true;
+
+		if (this.timerHeaderText || this.timerMainText || this.earnedPointsText || this.restartBtn) {
+			this.timerHeaderText.destroy();
+			this.timerMainText.destroy();
+			this.earnedPointsText.destroy();
+			this.restartBtn.destroy();
+		}
+	}
+
+	generateButtonHandler(targets, onComplete) {
+		return () => {
+			this.tweens.add({
+				targets,
+				scaleY: 0,
+				ease: 'Linear',
+				duration: 300,
+				onComplete,
+			});
+			this.currentPoints = 0;
+			this.similarCardsCount = 0;
+		};
+	}
+
+	generateHandlers = (targets, onComplete, btn) => {
+		btn.on('pointerdown', this.generateButtonHandler(targets, onComplete));
+		btn.on('pointerover', () => btn.setTint(0xf55f5f));
+		btn.on('pointerout', () => btn.clearTint());
+	};
+
 	createText() {
 		this.timeoutText = this.add.text(20, 480, '', {
 			font: '50px Novella',
@@ -80,10 +143,7 @@ class GameScene extends Phaser.Scene {
 	}
 
 	onTimerEnd() {
-		this.cards.forEach(card => card.destroy());
-		this.timeoutText.setText('');
-		this.levelText.setText('');
-		this.pointsText.setText('');
+		this.clearWhenEnd();
 
 		this.timerHeaderText = this.add.text(
 			this.sys.game.config.width / 2 - 420,
@@ -94,6 +154,7 @@ class GameScene extends Phaser.Scene {
 				fill: '#fff',
 			}
 		);
+
 		this.timerMainText = this.add.text(
 			this.sys.game.config.width / 2 - 700,
 			this.sys.game.config.height / 2 - 250,
@@ -118,32 +179,20 @@ class GameScene extends Phaser.Scene {
 			.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'restart')
 			.setInteractive({ cursor: 'pointer' });
 
-		const onRestartClick = () => {
-			this.tweens.add({
-				targets: [this.restartBtn, this.timerHeaderText, this.timerMainText, this.earnedPointsText],
-				scaleY: 0,
-				ease: 'Linear',
-				duration: 300,
-				onComplete: () => {
-					this.restartBtn.destroy();
-					this.isPlaying = true;
-					config.cards = [];
-					config.level = 1;
-					this.sounds.theme.stop();
-					this.create();
-				},
-			});
-			this.currentPoints = 0;
-			this.similarCardsCount = 0;
+		const onComplete = () => {
+			this.restartBtn.destroy();
+			this.isPlaying = true;
+			config.cards = [];
+			config.level = 1;
+			this.sounds.theme.stop();
+			this.create();
 		};
 
-		this.restartBtn.on('pointerdown', onRestartClick);
-		this.restartBtn.on('pointerover', () => {
-			this.restartBtn.setTint(0xf55f5f);
-		});
-		this.restartBtn.on('pointerout', () => {
-			this.restartBtn.clearTint();
-		});
+		this.generateHandlers(
+			[this.restartBtn, this.timerHeaderText, this.timerMainText, this.earnedPointsText],
+			onComplete,
+			this.restartBtn
+		);
 	}
 
 	onTimerTick() {
@@ -200,42 +249,17 @@ class GameScene extends Phaser.Scene {
 			.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'play')
 			.setInteractive({ cursor: 'pointer' });
 
-		const onClickBtn = () => {
-			this.tweens.add({
-				targets: [this.playBtn, headerText, mainText],
-				scaleY: 0,
-				ease: 'Linear',
-				duration: 300,
-				onComplete: () => {
-					this.playBtn.destroy();
-					this.isPlaying = true;
-					this.create();
-				},
-			});
+		const onComplete = () => {
+			this.playBtn.destroy();
+			this.isPlaying = true;
+			this.create();
 		};
 
-		this.playBtn.on('pointerdown', onClickBtn);
-		this.playBtn.on('pointerover', () => {
-			this.playBtn.setTint(0xf55f5f);
-		});
-		this.playBtn.on('pointerout', () => {
-			this.playBtn.clearTint();
-		});
+		this.generateHandlers([this.playBtn, headerText, mainText], onComplete, this.playBtn);
 	}
 
 	createEndingText() {
-		this.cards.forEach(card => card.destroy());
-		this.timeoutText.setText('');
-		this.levelText.setText('');
-		this.pointsText.setText('');
-		this.timer.paused = true;
-
-		if (this.timerHeaderText || this.timerMainText || this.earnedPointsText || this.restartBtn) {
-			this.timerHeaderText.destroy();
-			this.timerMainText.destroy();
-			this.earnedPointsText.destroy();
-			this.restartBtn.destroy();
-		}
+		this.clearWhenEnd();
 
 		const headerText = this.add.text(
 			this.sys.game.config.width / 2 - 210,
@@ -270,39 +294,21 @@ class GameScene extends Phaser.Scene {
 			.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'restart')
 			.setInteractive({ cursor: 'pointer' });
 
-		const onEndBtnClick = () => {
-			this.tweens.add({
-				targets: [this.endButton, headerText, mainText, earnedPointsText],
-				scaleY: 0,
-				ease: 'Linear',
-				duration: 300,
-				onComplete: () => {
-					this.endButton.destroy();
-					this.isPlaying = true;
-					config.cards = [];
-					config.level = 1;
-					this.sounds.theme.stop();
-					this.create();
-				},
-			});
-
-			this.currentPoints = 0;
-			this.similarCardsCount = 0;
+		const onComplete = () => {
+			this.endButton.destroy();
+			this.isPlaying = true;
+			config.cards = [];
+			config.level = 1;
+			this.sounds.theme.stop();
+			this.create();
 		};
 
-		this.endButton.on('pointerdown', onEndBtnClick);
-		this.endButton.on('pointerover', () => {
-			this.endButton.setTint(0xf55f5f);
-		});
-		this.endButton.on('pointerout', () => {
-			this.endButton.clearTint();
-		});
-
-		// config.level = 1
+		this.generateHandlers([this.endButton, headerText, mainText, earnedPointsText], onComplete, this.endButton);
 	}
 
 	create() {
 		this.createBackground();
+
 		if (this.isPlaying) {
 			this.createSounds();
 			this.playBtn.destroy();
@@ -318,12 +324,14 @@ class GameScene extends Phaser.Scene {
 
 	restart() {
 		let count = 0;
+
 		const onCardMoveComplete = () => {
 			++count;
 			if (count >= this.cards.length) {
 				this.start();
 			}
 		};
+
 		this.cards.forEach(card => {
 			card.move({
 				x: this.sys.game.config.width + card.width,
@@ -333,8 +341,9 @@ class GameScene extends Phaser.Scene {
 			});
 		});
 	}
+
 	start() {
-		if (config.level < 8) {
+		if (config.level < 2) {
 			this.checkLevelOptions();
 			this.initCardsPositions();
 			this.timeout = config.timeout;
@@ -350,6 +359,7 @@ class GameScene extends Phaser.Scene {
 			this.createEndingText();
 		}
 	}
+
 	initCards() {
 		const positions = Phaser.Utils.Array.Shuffle(this.positions);
 
@@ -357,6 +367,7 @@ class GameScene extends Phaser.Scene {
 			card.init(positions.pop());
 		});
 	}
+
 	showCards() {
 		this.cards.forEach(card => {
 			card.depth = card.position.delay;
@@ -367,9 +378,11 @@ class GameScene extends Phaser.Scene {
 			});
 		});
 	}
+
 	createBackground() {
 		this.add.sprite(0, 0, 'bg').setOrigin(0, 0);
 	}
+
 	createCards() {
 		this.cards = [];
 
@@ -379,31 +392,6 @@ class GameScene extends Phaser.Scene {
 				this.cards.push(currentCard);
 				currentCard.on('pointerdown', () => this.onCardClicked(currentCard));
 			}
-		}
-	}
-
-	setCurrentPoints() {
-		switch (true) {
-			case this.similarCardsCount === 1:
-				this.currentPoints = this.currentPoints + 100;
-				this.pointsText.setText('Points: ' + this.currentPoints);
-				break;
-			case this.similarCardsCount === 2:
-				this.currentPoints = this.currentPoints + 250;
-				this.pointsText.setText('Points: ' + this.currentPoints);
-				break;
-			case this.similarCardsCount === 3:
-				this.currentPoints = this.currentPoints + 500;
-				this.pointsText.setText('Points: ' + this.currentPoints);
-				break;
-			case this.similarCardsCount === 4:
-				this.currentPoints = this.currentPoints + 1000;
-				this.pointsText.setText('Points: ' + this.currentPoints);
-				break;
-			case this.similarCardsCount >= 5:
-				this.currentPoints = this.currentPoints + 5000;
-				this.pointsText.setText('Points: ' + this.currentPoints);
-				break;
 		}
 	}
 
@@ -431,7 +419,7 @@ class GameScene extends Phaser.Scene {
 				this.openedCard = card;
 			}
 		} else {
-			// еще нет открытой карта
+			// еще нет открытой карты
 			this.openedCard = card;
 		}
 
@@ -442,6 +430,7 @@ class GameScene extends Phaser.Scene {
 			}
 		});
 	}
+
 	initCardsPositions() {
 		const positions = [];
 		const cardTexture = this.textures.get('card').getSourceImage();
@@ -461,7 +450,6 @@ class GameScene extends Phaser.Scene {
 				});
 			}
 		}
-
 		this.positions = positions;
 	}
 }
