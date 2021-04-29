@@ -3,6 +3,8 @@ class GameScene extends Phaser.Scene {
 		super('Game');
 
 		this.isPlaying = false;
+		this.currentPoints = 0;
+		this.similarCardsCount = 0;
 	}
 	preload() {
 		this.load.image('bg', 'assets/sprites/background.jpeg');
@@ -70,12 +72,18 @@ class GameScene extends Phaser.Scene {
 			font: '50px Novella',
 			fill: '#fff',
 		});
+
+		this.pointsText = this.add.text(840, 25, '', {
+			font: '50px Novella',
+			fill: '#fff',
+		});
 	}
 
 	onTimerEnd() {
 		this.cards.forEach(card => card.destroy());
 		this.timeoutText.setText('');
 		this.levelText.setText('');
+		this.pointsText.setText('');
 
 		this.timerHeaderText = this.add.text(
 			this.sys.game.config.width / 2 - 420,
@@ -96,13 +104,23 @@ class GameScene extends Phaser.Scene {
 			}
 		);
 
+		this.earnedPointsText = this.add.text(
+			this.sys.game.config.width / 2 - 350,
+			this.sys.game.config.height / 2 + 250,
+			`You earned: ${this.currentPoints} points`,
+			{
+				font: '80px Novella',
+				fill: '#fff',
+			}
+		);
+
 		this.restartBtn = this.add
 			.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'restart')
 			.setInteractive({ cursor: 'pointer' });
 
 		const onRestartClick = () => {
 			this.tweens.add({
-				targets: [this.restartBtn, this.timerHeaderText, this.timerMainText],
+				targets: [this.restartBtn, this.timerHeaderText, this.timerMainText, this.earnedPointsText],
 				scaleY: 0,
 				ease: 'Linear',
 				duration: 300,
@@ -115,6 +133,8 @@ class GameScene extends Phaser.Scene {
 					this.create();
 				},
 			});
+			this.currentPoints = 0;
+			this.similarCardsCount = 0;
 		};
 
 		this.restartBtn.on('pointerdown', onRestartClick);
@@ -129,7 +149,7 @@ class GameScene extends Phaser.Scene {
 	onTimerTick() {
 		this.timeoutText.setText('Time: ' + this.timeout);
 
-		if (this.timeout <= 0) {
+		if (this.timeout < 0) {
 			this.timer.paused = true;
 			this.sounds.timeout.play();
 			this.onTimerEnd();
@@ -207,10 +227,14 @@ class GameScene extends Phaser.Scene {
 		this.cards.forEach(card => card.destroy());
 		this.timeoutText.setText('');
 		this.levelText.setText('');
+		this.pointsText.setText('');
 		this.timer.paused = true;
-		if (this.timerHeaderText || this.timerMainText) {
-			this.timerHeaderText.setText('');
-			this.timerMainText.setText('');
+
+		if (this.timerHeaderText || this.timerMainText || this.earnedPointsText || this.restartBtn) {
+			this.timerHeaderText.destroy();
+			this.timerMainText.destroy();
+			this.earnedPointsText.destroy();
+			this.restartBtn.destroy();
 		}
 
 		const headerText = this.add.text(
@@ -232,13 +256,23 @@ class GameScene extends Phaser.Scene {
 			}
 		);
 
+		const earnedPointsText = this.add.text(
+			this.sys.game.config.width / 2 - 350,
+			this.sys.game.config.height / 2 + 250,
+			`You earned: ${this.currentPoints} points`,
+			{
+				font: '80px Novella',
+				fill: '#fff',
+			}
+		);
+
 		this.endButton = this.add
 			.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'restart')
 			.setInteractive({ cursor: 'pointer' });
 
 		const onEndBtnClick = () => {
 			this.tweens.add({
-				targets: [this.endButton, headerText, mainText],
+				targets: [this.endButton, headerText, mainText, earnedPointsText],
 				scaleY: 0,
 				ease: 'Linear',
 				duration: 300,
@@ -251,6 +285,9 @@ class GameScene extends Phaser.Scene {
 					this.create();
 				},
 			});
+
+			this.currentPoints = 0;
+			this.similarCardsCount = 0;
 		};
 
 		this.endButton.on('pointerdown', onEndBtnClick);
@@ -305,6 +342,7 @@ class GameScene extends Phaser.Scene {
 			this.openedCardsCount = 0;
 			this.timer.paused = false;
 			this.levelText.setText('Level: ' + config.level);
+			this.pointsText.setText('Points: ' + this.currentPoints);
 			this.initCards();
 			this.showCards();
 			config.level++;
@@ -343,6 +381,32 @@ class GameScene extends Phaser.Scene {
 			}
 		}
 	}
+
+	setCurrentPoints() {
+		switch (true) {
+			case this.similarCardsCount === 1:
+				this.currentPoints = this.currentPoints + 100;
+				this.pointsText.setText('Points: ' + this.currentPoints);
+				break;
+			case this.similarCardsCount === 2:
+				this.currentPoints = this.currentPoints + 250;
+				this.pointsText.setText('Points: ' + this.currentPoints);
+				break;
+			case this.similarCardsCount === 3:
+				this.currentPoints = this.currentPoints + 500;
+				this.pointsText.setText('Points: ' + this.currentPoints);
+				break;
+			case this.similarCardsCount === 4:
+				this.currentPoints = this.currentPoints + 1000;
+				this.pointsText.setText('Points: ' + this.currentPoints);
+				break;
+			case this.similarCardsCount >= 5:
+				this.currentPoints = this.currentPoints + 5000;
+				this.pointsText.setText('Points: ' + this.currentPoints);
+				break;
+		}
+	}
+
 	onCardClicked(card) {
 		if (card.opened) {
 			return false;
@@ -354,11 +418,15 @@ class GameScene extends Phaser.Scene {
 			// уже есть открытая карта
 			if (this.openedCard.value === card.value) {
 				// картинки равны - запомнить
+				this.similarCardsCount++;
+				this.setCurrentPoints();
 				this.sounds.success.play();
 				this.openedCard = null;
 				++this.openedCardsCount;
 			} else {
 				// картинки разные - скрыть прошлую
+				this.similarCardsCount = 0;
+				this.setCurrentPoints();
 				this.openedCard.close();
 				this.openedCard = card;
 			}
