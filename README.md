@@ -1,3 +1,3 @@
-# memory-game
+# Train your brain.
 
-deploy mode only.
+Simple memory game.
