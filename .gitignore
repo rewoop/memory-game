@@ -8,7 +8,7 @@ tiles
 
 # storage
 storage
-assets
+assets/scripts
 
 # dependencies
 node_modules
